@@ -13,10 +13,10 @@ s = df_p.values[:, 1].reshape(-1, 1)  # 提取 df_proc.csv 的第二列作为 s
 T = df_tjk.values[:, 1:]
 T = np.hstack((T, T))
 
-
-#设置time最低时效
+####################################################
+#【设置time最低时效】
 time=600
-
+##########################################################
 # 定义线性规划问题
 problem = pulp.LpProblem("Linear_Programming_Problem", pulp.LpMinimize)
 # 定义变量
@@ -84,22 +84,15 @@ for k in range(1, 213):
     constraint_value = time - pulp.lpSum(M[j, k] * T[j-1][k-1] for j in range(1, 21))
     # 条件1：如果 constraint_value > 0，则 I[k] = 1；否则 I[k] = 0
     problem += constraint_value <= bigM * I[k]
-    # 条件2：确保 I[k] 的正确值
     problem += constraint_value >=0 - bigM * (1 - I[k])
-
-# 这里是时效满足率
-problem += pulp.lpSum(I[k] * q[k-1][0] for k in range(1, 213)) / pulp.lpSum(q[k-1][0] for k in range(1, 213)) >= 0.95
-
-# 计算分子和分母
 numerator = pulp.lpSum(I[k] * q[k-1][0] for k in range(1, 213))
 denominator = pulp.lpSum(q[k-1][0] for k in range(1, 213))
-
-# 约束1: 确保时效满足率 >= 0.95
+###############################################
+# 【约束1: 确保时效满足率 >= 0.95
 problem += numerator >= 0.95 * denominator
-
-# 约束2: 确保时效满足率 <= 0.96
+# 约束2: 确保时效满足率 <= 0.96】
 problem += numerator <= 0.96 * denominator
-
+##############################################################
 # constraint_value>=0  Ik必须等于 1，这表示条件满足。
 # constraint_value<0  Ik必须等于 0，这表示条件不满足。
 # 求解问题
@@ -131,6 +124,7 @@ df_M = pd.DataFrame(M_values, index=[f"j{j}" for j in range(1, 21)], columns=[f"
 #     for k in range(1, 213):
 #         print(f"M[{j},{k}] = {int(round(M[j, k].varValue))}")
 
+#开哪个RDC
 print("z values:")
 for j in range(1, 21):
     print(f"z[{j}] = {int(round(z[j].varValue))}")
@@ -138,8 +132,6 @@ for j in range(1, 21):
 print("z_plus values:")
 for j in range(1, 21):
     print(f"z_plus[{j}] = {int(round(z_plus[j].varValue))}")
-
-
 # print("I values:")
 # for k in range(1, 213):
 #     # 假设 I 是一个已经定义并求解过的 pulp 二进制变量列表或字典
@@ -150,11 +142,9 @@ for j in range(1, 21):
 #         print(f"I[{k}] = {I_value}, 第{k}个订单不满足")
 #     else:
 #         print(f"I[{k}] = {I_value}, 第{k}个订单满足")
-
 # 保存到 Excel
 df_M.to_excel("M_values.xlsx", index=True)
 print("结果已导出到 M_values.xlsx")
-
 
 
 # 1时效满足率
@@ -162,11 +152,7 @@ numerator = pulp.lpSum((pulp.value(I[k])) * q[k-1][0] for k in range(1, 213))
 denominator = pulp.lpSum(q[k-1][0] for k in range(1, 213))
 result = numerator / denominator
 print("时效满足率:", result)
-
-
 # 2time最低时效
 print("最低时效:", time)
-
-
 # 3成本
 print("成本:", pulp.value(problem.objective))
